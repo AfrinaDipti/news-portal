@@ -1,0 +1,110 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Alice Rahman",
+      "email": "alice@example.com"
+    },
+    {
+      "id": "2",
+      "name": "Karim Hossain",
+      "email": "karim@example.com"
+    },
+    {
+      "id": "3",
+      "name": "Nusrat Jahan",
+      "email": "nusrat@example.com"
+    }
+  ],
+  "news": [
+    {
+      "id": "1",
+      "title": "Govt Announces New Tech Park",
+      "body": "A new state-of-the-art tech park will be established in Dhaka to boost the IT sector.",
+      "author_id": 1,
+      "comments": [
+        {
+          "id": 1,
+          "text": "Great initiative!",
+          "user_id": 2,
+          "timestamp": "2025-12-04T10:30:00Z"
+        },
+        {
+          "id": 2,
+          "text": "Hope this brings more jobs.",
+          "user_id": 3,
+          "timestamp": "2025-12-04T11:00:00Z"
+        },
+        {
+          "id": 1765574427744,
+          "text": "Thanks",
+          "user_id": "1",
+          "timestamp": "2025-12-12T21:20:27.744Z"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Local Startup Wins Innovation Award",
+      "body": "A Dhaka-based startup has won an international innovation award for AI-driven solutions.",
+      "author_id": 2,
+      "comments": []
+    },
+    {
+      "id": "02f5",
+      "title": "British backpacker jailed for fatal drunken e-scooter crash.",
+      "body": "CCTV footage showing Alicia Kemp, from Redditch, Worcestershire, has been released after the British backpacker was jailed for four years after she struck and killed a father-of-two in Australia while riding an e-scooter.",
+      "author_id": "1",
+      "comments": []
+    },
+    {
+      "id": "4f5e",
+      "title": "Bonnie Blue is set to be deported from Bali and banned from the island for a decade",
+      "body": "Bonnie Blue is set to be deported and banned from Bali for a decade after being found guilty of breaching visa and traffic laws on the island.",
+      "author_id": "1",
+      "comments": []
+    },
+    {
+      "id": "8c7a",
+      "title": "Famous figures who lost their significant other",
+      "body": "Losing your partner is heartbreaking. However, grief can often inspire courage and hope. Some of these widowed stars achieved greatness after loss. Yet others found the mourning process more difficult to deal with. Browse this gallery of prominent celebs who managed to go on with life after losing their significant others.",
+      "author_id": "1",
+      "comments": []
+    },
+    {
+      "id": "6001",
+      "title": "Passenger arrested after attempting to open plane door while in the air",
+      "body": "A passenger was arrested after he allegedly tried to open the door of a plane during a flight.\n\nHong Kong police said today (Friday, December 12) that they had arrested the individual after the incident reportedly happened on December 10.",
+      "author_id": "1",
+      "comments": []
+    },
+    {
+      "id": "5037",
+      "title": "From 'Last Action Hero' to 'Sabotage': Arnold’s most infamous misfires",
+      "body": "Behind the unbreakable façade of the 'Terminator' lies a catalogue of films that could make even Mr. Freeze blush. These are the titles scorched by critics, forgotten by moviegoers, and kept alive today by the most ironic corners of fandom. Because even an action icon collects a few spectacular slips… and oh, do these leave a mark.",
+      "author_id": "1",
+      "comments": []
+    },
+    {
+      "id": "b2a7",
+      "title": "Diana, Princess of Wales was smuggled into a London pub disguised as Freddie Mercury’s boyfriend by late comedian Kenny Everett",
+      "body": "Late comedian and DJ Kenny Everett, his best friend and comedy partner Cleo Rocos and the late Queen frontman Freddie Mercury smuggled Princess Diana into the London gay bar the Vauxhall Tavern.",
+      "author_id": "2",
+      "comments": []
+    },
+    {
+      "id": "2e33",
+      "title": "Samuel Abisai: Inside Kenya’s biggest pig farm owned by jackpot winner",
+      "body": "Samuel Abisai, famous for winning KSh 221 million in the SportPesa jackpot, has shared some of the investments he’s made to build generational wealth.",
+      "author_id": "3",
+      "comments": []
+    },
+    {
+      "id": "63a6",
+      "title": "Self-made millionaire reveals the five phrases he tells his kids every day to make them successful",
+      "body": "A self-made millionaire has revealed the five simple tips he and his wife are teaching their kids to set them up for success as adults.\n\nJonathan Sanchez is a real estate mogul who founded his business with his wife Jacqueline in 2019.",
+      "author_id": "3",
+      "comments": []
+    }
+  ]
+}

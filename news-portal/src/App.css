@@ -3,7 +3,7 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  text-align: left; 
+  text-align: left;
   min-height: 100vh;
 }
 
@@ -25,9 +25,9 @@ body {
 
 .centered-container {
   display: flex;
-  justify-content: center; 
-  align-items: center;     
-  min-height: 100vh;      
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
@@ -36,7 +36,7 @@ body {
 .form-card {
   background: var(--card-bg);
   width: 100%;
-  max-width: 450px; 
+  max-width: 450px;
   padding: 40px;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
@@ -67,7 +67,7 @@ input, select, textarea {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 16px;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .btn {
@@ -88,17 +88,22 @@ input, select, textarea {
 .btn:hover { opacity: 0.9; }
 
 .btn-primary { background-color: var(--primary-color); color: white; }
-.btn-danger { background-color: var(--danger-color); color: white; }
-.btn-secondary { background-color: #9ca3af; color: white; }
+.btn-danger {
+  background-color: #dc2626; /* Specific Red Color */
+  color: white;
+}
+.btn-secondary { background-color: #678ded; color: white; }
 .btn-edit { background-color: #f59e0b; color: white; }
 .btn-dark { background-color: #1f2937; color: white; }
 
-.btn-block { 
-  width: 100%; 
-  display: block; 
+.btn-block {
+  width: 100%;
+  display: block;
   margin-top: 10px;
 }
-
+.btn-danger:hover {
+  background-color: #b91c1c; /* Darker Red for Hover */
+}
 .news-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

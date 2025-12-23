@@ -1,12 +1,13 @@
-// src/services/api.js
 import axios from "axios";
 
-const API_URL = "http://localhost:3000";
+// CHANGE THIS URL to your new Express Backend
+const API_URL = "http://localhost:5000";
 
 export const getUsers = () => axios.get(`${API_URL}/users`);
 
-
-export const getNews = (page = 1, limit = 4) => {
+// Express Route Logic Update:
+// My Express code returns { data: [...] } for pagination.
+export const getNews = (page = 1, limit = 6) => {
   return axios.get(`${API_URL}/news?_page=${page}&_per_page=${limit}`);
 };
 

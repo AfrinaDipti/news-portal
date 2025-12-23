@@ -1,0 +1,25 @@
+{
+  "name": "news-portal",
+  "version": "1.0.0",
+  "description": "A dynamic React application that allows users to view, create, edit, and delete news posts. It uses a mock backend (JSON-Server) to simulate a real database with REST API endpoints.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AfrinaDipti/news-portal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AfrinaDipti/news-portal/issues"
+  },
+  "homepage": "https://github.com/AfrinaDipti/news-portal#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.0.2"
+  }
+}

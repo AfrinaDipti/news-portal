@@ -1,148 +1,170 @@
-// backend/server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const app = express();
-const PORT = 5000; // We use 5000 for real backend
+const PORT = 5000;
+const SECRET_KEY = "news-portal-secret-key";
 
-// Middleware
+// 1. Middleware
 app.use(cors());
 app.use(express.json());
 
-// 1. Connect to MongoDB (Ensure MongoDB is running locally)
+// 2. Database Connection
 mongoose.connect('mongodb://127.0.0.1:27017/news-portal')
   .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+  .catch((err) => console.error('❌ Could not connect to MongoDB:', err));
 
-// 2. Define Schemas & Models
-
-// --- Helper to convert _id to id ---
-const toJSONConfig = {
-  virtuals: true,
-  versionKey: false,
-  transform: (doc, ret) => { delete ret._id; }
-};
-
-// USER SCHEMA
+// 3. Database Models
 const userSchema = new mongoose.Schema({
-  name: String,
-  email: String
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: "user" }
 });
-userSchema.set('toJSON', toJSONConfig);
 const User = mongoose.model('User', userSchema);
 
-// NEWS SCHEMA
 const newsSchema = new mongoose.Schema({
   title: String,
-  body: String,
-  author_id: String, // Storing author ID as string to match User ID
+  content: String,
+  category: String,
+  author: String,
+  timestamp: { type: Date, default: Date.now },
+  // Defined comments array structure
   comments: [{
-    id: Number,
+    user: String,
     text: String,
-    user_id: String,
-    timestamp: String
+    date: { type: Date, default: Date.now }
   }]
-}, { timestamps: true }); // Adds createdAt automatically
-
-newsSchema.set('toJSON', toJSONConfig);
+});
 const News = mongoose.model('News', newsSchema);
 
-// 3. API Routes
+// 4. Routes (Now prefixed with /api)
 
-// --- SEED DATA (Run this once to get users) ---
-app.post('/seed', async (req, res) => {
-  await User.deleteMany({});
-  const users = await User.create([
-    { name: "Alice Rahman", email: "alice@example.com" },
-    { name: "Karim Hossain", email: "karim@example.com" },
-    { name: "Nusrat Jahan", email: "nusrat@example.com" }
-  ]);
-  res.json({ message: "Database seeded!", users });
+// --- AUTH ROUTES ---
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign({ id: user._id, role: user.role, email: user.email }, SECRET_KEY, { expiresIn: "1h" });
+
+    res.json({
+      token,
+      user: { name: user.name, email: user.email, role: user.role }
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// --- USER ROUTES ---
-app.get('/users', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
+app.post('/api/seed', async (req, res) => {
+  try {
+    try { await User.collection.drop(); } catch (e) {}
+    const passwordHash = await bcrypt.hash("password123", 10);
+    await User.insertMany([
+      { name: "Alice Rahman", email: "alice@example.com", password: passwordHash, role: "admin" },
+      { name: "Karim Hossain", email: "karim@example.com", password: passwordHash, role: "user" },
+      { name: "Nusrat Jahan", email: "nusrat@example.com", password: passwordHash, role: "user" }
+    ]);
+    res.send("Database seeded!");
+  } catch (err) {
+    res.status(500).send("Error seeding database");
+  }
 });
 
 // --- NEWS ROUTES ---
-
-// GET All News (With Pagination)
-app.get('/news', async (req, res) => {
-  const page = parseInt(req.query._page) || 1;
-  const limit = parseInt(req.query._per_page) || 10;
-
+app.get('/api/news', async (req, res) => {
   try {
-    const news = await News.find()
-      .sort({ createdAt: -1 }) // Newest first
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    // Count for pagination checks
-    const count = await News.countDocuments();
-
-    // mimic json-server response structure if needed, or just send array
-    // For your current frontend logic, simple array works,
-    // but for pagination logic, we return the data.
-    res.json({
-      data: news,
-      items: count,
-      pages: Math.ceil(count / limit)
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET One News
-app.get('/news/:id', async (req, res) => {
-  try {
-    const news = await News.findById(req.params.id);
-    if (!news) return res.status(404).json({ message: "Not found" });
+    const news = await News.find().sort({ timestamp: -1 });
     res.json(news);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching news" });
   }
 });
 
-// CREATE News
-app.post('/news', async (req, res) => {
+app.post('/api/news', async (req, res) => {
   try {
     const newPost = new News(req.body);
     await newPost.save();
-    res.status(201).json(newPost);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.json(newPost);
+  } catch (err) {
+    res.status(500).json({ message: "Error saving news" });
   }
 });
 
-// UPDATE News (Patch)
-app.patch('/news/:id', async (req, res) => {
+app.get('/api/news/:id', async (req, res) => {
   try {
-    const updatedPost = await News.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true } // Return the updated document
-    );
-    res.json(updatedPost);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    const news = await News.findById(req.params.id);
+    if (!news) return res.status(404).json({ message: "News not found" });
+    res.json(news);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching news" });
   }
 });
 
-// DELETE News
-app.delete('/news/:id', async (req, res) => {
+app.put('/api/news/:id', async (req, res) => {
   try {
-    await News.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const updatedNews = await News.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updatedNews);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating news" });
   }
 });
 
-// Start Server
+// SECURE DELETE ROUTE
+app.delete('/api/news/:id', async (req, res) => {
+  try {
+    // 1. Get Token
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+    const token = authHeader.split(" ")[1];
+
+    // 2. Verify User
+    const decoded = jwt.verify(token, SECRET_KEY);
+
+    // 3. Find the News Item
+    const news = await News.findById(req.params.id);
+    if (!news) return res.status(404).json({ message: "News not found" });
+
+    // 4. SMART CHECK: Allow if Admin OR if User is the Author
+    if (decoded.role === 'admin' || decoded.name === news.author) {
+      await News.findByIdAndDelete(req.params.id);
+      res.json({ message: "News deleted successfully" });
+    } else {
+      // If neither, block them
+      return res.status(403).json({ message: "Forbidden: You can only delete your own news" });
+    }
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error or Invalid Token" });
+  }
+});
+
+// --- COMMENT ROUTE (NEW) ---
+app.post('/api/news/:id/comments', async (req, res) => {
+  try {
+    const { user, text } = req.body;
+    const news = await News.findById(req.params.id);
+    if (!news) return res.status(404).json({ message: "News not found" });
+
+    // Add comment to the beginning of the array
+    news.comments.unshift({ user, text });
+    await news.save();
+
+    res.json(news);
+  } catch (err) {
+    res.status(500).json({ message: "Error adding comment" });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`🚀 Express Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

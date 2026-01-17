@@ -1,127 +1,56 @@
-
 import { useEffect, useState } from "react";
-import { getNews, getUsers, deleteNews } from "../services/api"; 
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { getNews } from "../services/api";
 
-function NewsList() {
+const NewsList = () => {
   const [news, setNews] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
-  
-
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true); 
-
-  const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem("token"); // Check if logged in
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) setCurrentUser(user);
-    else navigate("/");
-  }, [navigate]);
+    fetchNews();
+  }, []);
 
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const fetchData = async () => {
-      const usersRes = await getUsers();
-      setUsers(usersRes.data);
-
-      const newsRes = await getNews(page, 6);
-      
-      const fetchedNews = newsRes.data.data || newsRes.data; 
-      
-      setNews(fetchedNews);
-
-      if (fetchedNews.length < 6) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
-    };
-
-    fetchData();
-  }, [currentUser, page]); 
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete this post?")) {
-      await deleteNews(id);
-
-      const res = await getNews(page, 4);
-      setNews(res.data.data || res.data);
+  const fetchNews = async () => {
+    try {
+      const data = await getNews();
+      setNews(data);
+    } catch (error) {
+      console.error("Error fetching news:", error);
     }
   };
 
-  const getAuthor = (id) => users.find(u => String(u.id) === String(id))?.name || "Unknown";
-
-  if (!currentUser) return null;
-
   return (
-    <div className="list-container">
-      <div className="header-row">
-        <div>
-          <h2>Latest News</h2>
-          <p style={{ margin: 0, color: "gray" }}>Page {page}</p>
-        </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Link to="/news/create" className="btn btn-primary">+ Create</Link>
-          <button onClick={handleLogout} className="btn btn-dark">Logout</button>
-        </div>
+    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h2>🔥 Latest News</h2>
+        {/* Only show this button if user is logged in */}
+        {isLoggedIn && (
+          <Link to="/create" style={styles.createBtn}>
+            + Create News
+          </Link>
+        )}
       </div>
 
-      <div className="news-grid">
+      {news.length === 0 ? <p>No news found.</p> : null}
+
+      <div style={{ display: "grid", gap: "20px" }}>
         {news.map((item) => (
-          <div key={item.id} className="news-card">
-            <div>
-              <h3>{item.title}</h3>
-              <p style={{ fontSize: "14px", color: "#6b7280", fontStyle: "italic" }}>
-                By {getAuthor(item.author_id)}
-              </p>
-              <p style={{ lineHeight: "1.5", color: "#374151" }}>
-                {item.body.length > 100 ? item.body.substring(0, 100) + "..." : item.body}
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-              <Link to={`/news/${item.id}`} className="btn btn-secondary" style={{ flex: 1, textAlign: "center" }}>Read</Link>
-              {String(currentUser.id) === String(item.author_id) && (
-                <>
-                  <Link to={`/news/edit/${item.id}`} className="btn btn-edit" style={{ flex: 1, textAlign: "center" }}>Edit</Link>
-                  <button onClick={() => handleDelete(item.id)} className="btn btn-danger" style={{ flex: 1 }}>Delete</button>
-                </>
-              )}
-            </div>
+          <div key={item._id} style={styles.card}>
+            <h3>{item.title}</h3>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>By {item.author || "Unknown"} | {new Date(item.timestamp).toLocaleDateString()}</p>
+            {/* <p>{item.content.substring(0, 100)}...</p> */}
+            <Link to={`/news/${item._id}`} style={styles.readMore}>Read More →</Link>
           </div>
         ))}
       </div>
-
-      {/* PAGINATION BUTTONS */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
-        <button 
-          onClick={() => setPage(page - 1)} 
-          disabled={page === 1} 
-          className="btn btn-secondary"
-          style={{ width: "auto" }}
-        >
-          ← Previous
-        </button>
-
-        <button 
-          onClick={() => setPage(page + 1)} 
-          disabled={!hasMore}
-          className="btn btn-primary"
-          style={{ width: "auto" }}
-        >
-          Next →
-        </button>
-      </div>
-
     </div>
   );
-}
+};
+
+const styles = {
+  createBtn: { background: "#28a745", color: "white", padding: "10px 15px", textDecoration: "none", borderRadius: "5px", fontWeight: "bold" },
+  card: { padding: "20px", border: "1px solid #ddd", borderRadius: "8px", background: "#fff", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" },
+  readMore: { color: "#007BFF", textDecoration: "none", fontWeight: "bold" }
+};
 
 export default NewsList;

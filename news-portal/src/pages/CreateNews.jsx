@@ -1,79 +1,69 @@
-// src/pages/CreateNews.jsx
-import { useState } from "react";
-import { createNews } from "../services/api";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { createNews } from "../services/api";
 
-function CreateNews() {
+const CreateNews = () => {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("General");
   const navigate = useNavigate();
 
-  // 1. ADD THIS: Retrieve the user from storage when the component loads
-  // We can just read it directly inside the submit handler, or store it in state.
-  // Reading it in submit is easiest.
+  // 1. Security Check: Redirect if not logged in
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      alert("You must be logged in to create news!");
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // 2. GET USER HERE
-    const userStr = localStorage.getItem("user");
-    const currentUser = userStr ? JSON.parse(userStr) : null;
-
-    if (!currentUser) {
-      alert("You must be logged in!");
-      navigate("/");
-      return;
-    }
-
-    if (!title.trim() || body.length < 20) return alert("Check inputs (Body must be 20+ chars)");
-
-    const newPost = {
-      // id: Date.now(), // REMOVED: Let MongoDB handle the ID
-      title: title,
-      body: body,
-      author_id: currentUser.id, // Now 'currentUser' is defined!
-      comments: []
-    };
-
     try {
-      await createNews(newPost);
-      navigate("/news");
+      // Get user email from storage to auto-fill author
+      const user = JSON.parse(localStorage.getItem("user"));
+      //const author = user ? user.email : "Anonymous";
+      const author = user ? user.name : "Anonymous";
+
+      await createNews({ title, content, category, author });
+      alert("News Created Successfully!");
+      navigate("/");
     } catch (error) {
-      console.error("Failed to create news:", error);
-      alert("Error creating news");
+      console.error("Failed to create news", error);
+      alert("Error: Could not save news.");
     }
   };
 
   return (
-    <div className="centered-container">
-      <div className="form-card">
-        <h2>Create Post</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Headline..."
-            />
-          </div>
-          <div className="form-group">
-            <label>Content</label>
-            <textarea
-              rows="5"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Minimum 20 characters..."
-            />
-          </div>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button type="submit" className="btn btn-primary btn-block">Publish</button>
-            <button type="button" onClick={() => navigate("/news")} className="btn btn-secondary btn-block">Cancel</button>
-          </div>
-        </form>
-      </div>
+    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px" }}>
+      <h2>✍️ Write a New Article</h2>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          style={{ padding: "10px", fontSize: "1.1rem" }}
+          required
+        />
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ padding: "10px" }}>
+          <option value="General">General</option>
+          <option value="Tech">Tech</option>
+          <option value="Sports">Sports</option>
+        </select>
+        <textarea
+          rows="5"
+          placeholder="Content..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          style={{ padding: "10px", fontSize: "1rem" }}
+          required
+        />
+        <button type="submit" style={{ padding: "12px", background: "#007BFF", color: "white", border: "none", cursor: "pointer", fontSize: "1rem" }}>
+          Publish
+        </button>
+      </form>
     </div>
   );
-}
+};
 
 export default CreateNews;

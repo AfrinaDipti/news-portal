@@ -1,105 +1,102 @@
-// src/pages/NewsDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getNewsById, updateNews, getUsers } from "../services/api";
+import { getNewsById, deleteNews, addComment } from "../services/api";
 
-function NewsDetail() {
-  const { id } = useParams(); // 'id' is a String (e.g., "658a4b...")
+const NewsDetail = () => {
+  const { id } = useParams();
+  const [news, setNews] = useState(null);
+  const [commentText, setCommentText] = useState("");
   const navigate = useNavigate();
-  const [newsItem, setNewsItem] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [comment, setComment] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  // --- SMART LOGIC STARTS ---
+  const isAdmin = user?.role === "admin";
+  const isAuthor = user?.name && news?.author && user.name === news.author;
+  console.log("isAdmin:", isAdmin, "isAuthor:", isAuthor);
+
+  // Show button if User is Admin OR User wrote this news
+  const canDelete = isAdmin || isAuthor;
+  // --- SMART LOGIC ENDS ---
 
   useEffect(() => {
-    // Load User
-    const userStr = localStorage.getItem("user");
-    if (userStr) setCurrentUser(JSON.parse(userStr));
+    fetchDetail();
+  }, [id]);
 
-    // Fetch News and Users
-    const fetchData = async () => {
+  const fetchDetail = async () => {
+    try {
+      const data = await getNewsById(id);
+      setNews(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (confirm("Delete this news?")) {
       try {
-        // ✅ FIX: Direct ID usage (No parseInt/Number conversion)
-        const newsRes = await getNewsById(id);
-        const usersRes = await getUsers();
-        setNewsItem(newsRes.data);
-        setUsers(usersRes.data);
+        await deleteNews(id);
+        navigate("/");
       } catch (error) {
-        console.error("Error loading news:", error);
-        alert("Could not load news. Check console.");
-        navigate("/news");
+        alert("Failed to delete. You might not have permission.");
       }
-    };
-    fetchData();
-  }, [id, navigate]);
-
-  const handleAddComment = async () => {
-    if (!comment.trim()) return;
-
-    // Create new comment object
-    const newComment = {
-      id: Date.now(), // Comments inside the array can still use simple Number IDs
-      text: comment,
-      user_id: currentUser.id,
-      timestamp: new Date().toISOString()
-    };
-
-    // Add to existing comments
-    const updatedComments = [...(newsItem.comments || []), newComment];
-
-    // Update Backend
-    // ✅ We send ONLY the fields we want to update
-    await updateNews(id, { comments: updatedComments });
-
-    // Update Screen
-    setNewsItem({ ...newsItem, comments: updatedComments });
-    setComment("");
+    }
   };
 
-  const getAuthorName = (uid) => {
-    // ✅ FIX: Convert both to String to match safely
-    const u = users.find(user => String(user.id) === String(uid));
-    return u ? u.name : "Unknown";
+  const handleComment = async (e) => {
+    e.preventDefault();
+    if (!user) return alert("Please login to comment");
+    await addComment(id, { user: user.name, text: commentText });
+    setCommentText("");
+    fetchDetail();
   };
 
-  if (!newsItem) return <div className="centered-container">Loading...</div>;
+  if (!news) return <p>Loading...</p>;
 
   return (
-    <div className="container">
-      <div className="news-card" style={{ marginTop: "40px" }}>
-        <h2>{newsItem.title}</h2>
-        <p className="author-text">By {getAuthorName(newsItem.author_id)}</p>
-        <p className="news-body">{newsItem.body}</p>
+    <div style={{ maxWidth: "800px", margin: "20px auto", padding: "20px", border: "1px solid #eee", borderRadius: "10px" }}>
+      <h1>{news.title}</h1>
+      <p style={{ color: "#555" }}>
+        <strong>Author:</strong> {news.author} | <strong>Category:</strong> {news.category}
+      </p>
+      <hr />
+      <p style={{ lineHeight: "1.6", fontSize: "1.1rem" }}>{news.content}</p>
 
-        <hr />
-
-        {/* COMMENTS SECTION */}
-        <h3>Comments</h3>
-        <div style={{ marginBottom: "20px" }}>
-          {newsItem.comments?.map((c) => (
-            <div key={c.id} style={{ background: "#f9f9f9", padding: "10px", marginBottom: "10px", borderRadius: "5px" }}>
-              <strong>{getAuthorName(c.user_id)}</strong>: {c.text}
-            </div>
-          ))}
-        </div>
-
-        {currentUser && (
-          <div style={{ display: "flex", gap: "10px" }}>
-            <input
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment..."
-            />
-            <button onClick={handleAddComment} className="btn btn-primary" style={{ width: "auto" }}>Post</button>
-          </div>
-        )}
-
-        <button onClick={() => navigate("/news")} className="btn btn-secondary" style={{ marginTop: "20px" }}>
-          Back to List
+      {/* CONDITIONAL RENDER: Only show if allowed */}
+      {canDelete && (
+        <button
+          onClick={handleDelete}
+          style={{ marginTop: "20px", background: "red", color: "white", border: "none", padding: "10px", cursor: "pointer" }}
+        >
+          Delete News
         </button>
+      )}
+
+      <div style={{ marginTop: "40px", borderTop: "1px solid #ddd", paddingTop: "20px" }}>
+        <h3>💬 Comments ({news.comments?.length || 0})</h3>
+
+        {user ? (
+          <form onSubmit={handleComment} style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Write a comment..."
+              required
+              style={{ flex: 1, padding: "10px" }}
+            />
+            <button type="submit" style={{ padding: "10px", background: "#333", color: "white", border: "none" }}>Post</button>
+          </form>
+        ) : <p>Please <a href="/login">login</a> to comment.</p>}
+
+        {news.comments?.map((c, i) => (
+          <div key={i} style={{ background: "#f9f9f9", padding: "10px", marginBottom: "10px" }}>
+            <strong>{c.user}</strong>: {c.text}
+          </div>
+        ))}
       </div>
     </div>
   );
-}
+};
 
 export default NewsDetail;

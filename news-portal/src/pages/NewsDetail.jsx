@@ -10,14 +10,10 @@ const NewsDetail = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // --- SMART LOGIC STARTS ---
+  // Smart Permissions
   const isAdmin = user?.role === "admin";
   const isAuthor = user?.name && news?.author && user.name === news.author;
-  console.log("isAdmin:", isAdmin, "isAuthor:", isAuthor);
-
-  // Show button if User is Admin OR User wrote this news
-  const canDelete = isAdmin || isAuthor;
-  // --- SMART LOGIC ENDS ---
+  const canEditOrDelete = isAdmin || isAuthor;
 
   useEffect(() => {
     fetchDetail();
@@ -38,7 +34,7 @@ const NewsDetail = () => {
         await deleteNews(id);
         navigate("/");
       } catch (error) {
-        alert("Failed to delete. You might not have permission.");
+        alert("Failed to delete.");
       }
     }
   };
@@ -62,29 +58,32 @@ const NewsDetail = () => {
       <hr />
       <p style={{ lineHeight: "1.6", fontSize: "1.1rem" }}>{news.content}</p>
 
-      {/* CONDITIONAL RENDER: Only show if allowed */}
-      {canDelete && (
-        <button
-          onClick={handleDelete}
-          style={{ marginTop: "20px", background: "red", color: "white", border: "none", padding: "10px", cursor: "pointer" }}
-        >
-          Delete News
-        </button>
+      {/* --- ACTION BUTTONS (Edit & Delete) --- */}
+      {canEditOrDelete && (
+        <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+          <button
+            onClick={() => navigate(`/news/edit/${id}`)}
+            style={{ background: "#007BFF", color: "white", border: "none", padding: "10px 20px", cursor: "pointer", borderRadius: "5px" }}
+          >
+            ✏️ Edit
+          </button>
+
+          <button
+            onClick={handleDelete}
+            style={{ background: "red", color: "white", border: "none", padding: "10px 20px", cursor: "pointer", borderRadius: "5px" }}
+          >
+            🗑️ Delete
+          </button>
+        </div>
       )}
 
+      {/* --- COMMENTS SECTION --- */}
       <div style={{ marginTop: "40px", borderTop: "1px solid #ddd", paddingTop: "20px" }}>
         <h3>💬 Comments ({news.comments?.length || 0})</h3>
 
         {user ? (
           <form onSubmit={handleComment} style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Write a comment..."
-              required
-              style={{ flex: 1, padding: "10px" }}
-            />
+            <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write a comment..." required style={{ flex: 1, padding: "10px" }} />
             <button type="submit" style={{ padding: "10px", background: "#333", color: "white", border: "none" }}>Post</button>
           </form>
         ) : <p>Please <a href="/login">login</a> to comment.</p>}

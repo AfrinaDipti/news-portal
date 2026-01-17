@@ -1,49 +1,85 @@
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getNewsById, updateNews } from "../services/api";
 
-function EditNews() {
+const EditNews = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
 
+  // State for form fields
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("General");
+  const [loading, setLoading] = useState(true);
+
+  // 1. Fetch existing data when page loads
   useEffect(() => {
-    getNewsById(id).then(res => {
-      setTitle(res.data.title);
-      setBody(res.data.body);
-    }).catch(() => navigate("/news"));
+    const fetchData = async () => {
+      try {
+        const data = await getNewsById(id);
+        setTitle(data.title);
+        setContent(data.content);
+        setCategory(data.category);
+        setLoading(false);
+      } catch (error) {
+        alert("Error fetching news");
+        navigate("/");
+      }
+    };
+    fetchData();
   }, [id, navigate]);
 
+  // 2. Handle Update Submission
   const handleUpdate = async (e) => {
     e.preventDefault();
-    if (body.length < 20) return alert("Content too short");
-    await updateNews(id, { title, body });
-    navigate("/news");
+    try {
+      await updateNews(id, { title, content, category });
+      alert("News Updated Successfully!");
+      navigate(`/news/${id}`); // Go back to the detail page
+    } catch (error) {
+      console.error("Failed to update news", error);
+      alert("Error: Could not update news.");
+    }
   };
 
+  if (loading) return <p>Loading...</p>;
+
   return (
-    <div className="centered-container">
-      <div className="form-card">
-        <h2>Edit Post</h2>
-        <form onSubmit={handleUpdate}>
-          <div className="form-group">
-            <label>Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Content</label>
-            <textarea rows="5" value={body} onChange={(e) => setBody(e.target.value)} />
-          </div>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button type="submit" className="btn btn-primary btn-block">Save</button>
-            <button type="button" onClick={() => navigate("/news")} className="btn btn-secondary btn-block">Cancel</button>
-          </div>
-        </form>
-      </div>
+    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px" }}>
+      <h2>✏️ Edit Article</h2>
+      <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+
+        <label>Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          style={{ padding: "10px", fontSize: "1.1rem" }}
+          required
+        />
+
+        <label>Category</label>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ padding: "10px" }}>
+          <option value="General">General</option>
+          <option value="Tech">Tech</option>
+          <option value="Sports">Sports</option>
+        </select>
+
+        <label>Content</label>
+        <textarea
+          rows="10"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          style={{ padding: "10px", fontSize: "1rem" }}
+          required
+        />
+
+        <button type="submit" style={{ padding: "12px", background: "#007BFF", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", borderRadius: "5px" }}>
+          Update News
+        </button>
+      </form>
     </div>
   );
-}
+};
 
 export default EditNews;
